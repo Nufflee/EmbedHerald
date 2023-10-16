@@ -31,8 +31,8 @@ $ npm run deploy
 
 ## TODO
 
-- [] Landing page on https://nuff.gay/
-- [] Deploying to CF automagically on commit (Github Actions)
+- [ ] Landing page on https://nuff.gay/
+- [ ] Deploying to CF automagically on commit (Github Actions)
 
 ## Copyright
 
