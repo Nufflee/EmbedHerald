@@ -1,0 +1,33 @@
+{
+  "name": "embedherald",
+  "version": "1.0.0",
+  "description": "Generates OpenGraph embeds for avherald.com articles",
+  "main": "src/worker.ts",
+  "scripts": {
+    "start-local": "npx ts-node src/local.ts --transpileOnly",
+    "deploy": "npx wrangler deploy src/worker.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nufflee/EmbedHerald.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Nufflee/EmbedHerald/issues"
+  },
+  "homepage": "https://github.com/Nufflee/EmbedHerald#readme",
+  "dependencies": {
+    "node-html-parser": "^6.1.6"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20231010.0",
+    "@types/express": "^4.17.19",
+    "express": "^4.18.2",
+    "http-proxy": "^1.18.1",
+    "localtunnel": "^2.0.2",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.4.4",
+    "wrangler": "^3.13.1"
+  }
+}
