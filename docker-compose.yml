@@ -1,0 +1,6 @@
+version: '3.7'
+services:
+  embedherlad:
+    image: nufflee/embedherald:latest
+    ports:
+      - 6969:6969

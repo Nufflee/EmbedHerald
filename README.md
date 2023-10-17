@@ -8,7 +8,21 @@ Currently hosted on `nuff.gay`. To use it, simply take an avherald.com URL and r
 
 ## Running locally
 
-Run:
+### With Docker
+
+```
+$ npm run docker:build
+$ npm run docker:run
+```
+
+### With Docker Compose
+```
+$ npm run docker:compose
+```
+
+You can find the details of the docker-compose setup in `docker-compose.yml`.
+
+### With NPM
 
 ```
 $ npm i
