@@ -70,9 +70,6 @@ export async function generateHTML(articleId: string) {
   // Trim content to 400 characters
   contentText = contentText.slice(0, 400).trim() + '...';
 
-  // todo: date of incident
-
-
   return `
     <head>
       <meta http-equiv="refresh" content="0;URL='${url}'"/>
