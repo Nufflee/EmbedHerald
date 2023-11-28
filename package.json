@@ -5,7 +5,9 @@
   "main": "src/worker.ts",
   "scripts": {
     "start-local": "npx ts-node src/local.ts --transpileOnly",
-    "deploy": "npx wrangler deploy src/worker.ts"
+    "deploy": "npx wrangler deploy src/worker.ts",
+    "docker:build": "docker build . -t nufflee/embedherald",
+    "docker:run": "docker run -p 6969:6969 nufflee/embedherald"
   },
   "repository": {
     "type": "git",

@@ -8,7 +8,7 @@ Currently hosted on `nuff.gay`. To use it, simply take an avherald.com URL and r
 
 ## Running locally
 
-Run:
+### With NPM
 
 ```
 $ npm i
@@ -17,6 +17,21 @@ $ npm run start-local
 
 > [!NOTE]
 > To test embeds on Discord or similar services, you need to expose your instance to the Internet. The simplest way to do that is by using a tunnel, such as [localtunnel](https://theboroer.github.io/localtunnel-www/).
+
+### With Docker
+
+```
+$ npm run docker:build
+$ npm run docker:run
+```
+
+### With Docker Compose
+
+```
+$ npm run docker:compose
+```
+
+You can find the details of the docker-compose setup in `docker-compose.yml`.
 
 ## Deploying on Cloudflare
 
