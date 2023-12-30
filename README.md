@@ -8,26 +8,33 @@ Currently hosted on `nuff.gay`. To use it, simply take an avherald.com URL and r
 
 ## Running locally
 
-### With NPM
+### Using npm
 
-```
+```sh
 $ npm i
 $ npm run start-local
 ```
 
-> [!NOTE]
-> To test embeds on Discord or similar services, you need to expose your instance to the Internet. The simplest way to do that is by using a tunnel, such as [localtunnel](https://theboroer.github.io/localtunnel-www/).
+#### Exposing your instance to the Internet
 
-### With Docker
+To test your local instance on Discord or similar services, you will need to expose it to the Internet. You can do that using [localtunnel](https://theboroer.github.io/localtunnel-www/) by running the following commands _concurrently_. 
 
+```sh
+$ npx http-proxy -p 8001 6969 # necessary so that the tunnel does not close when restarting the application
+$ npx lt -p 8001
+$ npm run start-local
 ```
+
+### Using Docker
+
+```sh
 $ npm run docker:build
 $ npm run docker:run
 ```
 
-### With Docker Compose
+### Using Docker Compose
 
-```
+```sh
 $ npm run docker:compose
 ```
 
@@ -39,16 +46,11 @@ First, follow the [Cloudflare Getting Started guide](https://developers.cloudfla
 
 Then, run:
 
-```
+```sh
 $ npm i
 $ npm run deploy
 ```
 
-## TODO
-
-- [ ] Landing page on https://nuff.gay/
-- [ ] Deploying to CF automagically on commit (Github Actions)
-
 ## Copyright
 
-I did not write nor do I own any content on avherald.com.
+I did not write nor do I own any content on https://avherald.com.
