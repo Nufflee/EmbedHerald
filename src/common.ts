@@ -1,10 +1,11 @@
 import { NodeType, parse } from "node-html-parser";
 
-const colors = {
-  Report: "#89a0fa",
-  Incident: "#feff45",
-  Accident: "#e58326",
-  Crash: "#e52f18",
+const COLORS = {
+  Notice: "#00FF00",
+  Report: "#89A0FA",
+  Incident: "#FEFF45",
+  Accident: "#E58326",
+  Crash: "#E52F18",
 };
 
 export async function generateHTML(articleId: string) {
@@ -33,10 +34,17 @@ export async function generateHTML(articleId: string) {
   const content = parsed.querySelector("td > div > .sitetext");
   const images = content!.querySelectorAll("img");
 
-  const color = colors[title.split(":")[0]];
+  let color: string;
 
-  // Strip incident type out of the title, it's already indicated by the color
-  title = title.split(":")[1].trim();
+  if (title.includes(":")) {
+    color = COLORS[title.split(":")[0]];
+
+    // Strip incident type out of the title as it's already indicated by the color
+    title = title.split(":")[1].trim();
+  } else {
+    // If there's no accident type in the title, assume it's a notice
+    color = COLORS["Notice"];
+  }
 
   let contentText = content!.childNodes
     .map((node, i) => {
