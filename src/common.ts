@@ -8,7 +8,10 @@ const COLORS = {
   Crash: "#E52F18",
 };
 
-function formatLocationAndDate(locationExists, location, date) {
+const happeningsKeywords = ['stated', 'landed', 'departed', 'performed'];
+const locationKeywords = [', was', ', had been'];
+
+function formatLocationAndDate(locationExists: boolean, location: string, date: string) {
   let str = (locationExists ? location : '') + date;
   str = str.trim();
   str = str[0].toUpperCase() + str.slice(1);
@@ -57,12 +60,22 @@ export async function generateHTML(articleId: string) {
     .map((node, i) => {
       if (node.nodeType === NodeType.TEXT_NODE) {
         if (i === 0) {
-          // extract the location, which means the stuff between "was" and "when" (or when sentence ends and a new one begins), and what happened ("happenings"), which begins after "when" (or the next sentence).
+          // extract the location, which means the stuff between a location keyword and "when" (or when sentence ends and a new one begins), and what happened ("happenings"), which begins after "when" (or the next sentence).
           const nodeTextContent = node.text;
-          const locationStartIndex = nodeTextContent.indexOf(', was ');
+          const locationStartIndex = Math.min(
+            ...locationKeywords.map((keyword) => {
+              const index = nodeTextContent.indexOf(keyword)
+
+              if (index >= 0) {
+                return index + keyword.length;
+              }
+
+              return index;
+            }).filter((i) => i >= 0)
+          );
 
           const whenIndex = nodeTextContent.indexOf(' when ');
-          
+
           // index of the first occurence of a sentence ending in a full-stop and the next beginning with a capital letter
           const firstSentenceBoundaryIndex = Math.min(
             ...nodeTextContent.split('.').map((sentence, i, arr) => {
@@ -72,7 +85,7 @@ export async function generateHTML(articleId: string) {
               const nextIndex = arr.slice(0, i + 1).map(sentence => sentence.length + 1).reduce((partialSum, currentValue) => partialSum + currentValue, 0);
 
               const nextsentence = arr[i + 1];
-              
+
               // if this is the last sentence, return index of this sentence's fullstop
               if (i === arr.length - 1) {
                 return nextIndex - 1;
@@ -80,53 +93,54 @@ export async function generateHTML(articleId: string) {
 
               // if this isnt the last sentence and the next one begins with a space and capital letter, return index of this sentence's fullstop
               if (i < arr.length - 1 && nextsentence[0] === ' ' && nextsentence[1] === nextsentence[1].toUpperCase()) return nextIndex - 1;
-              
+
               // fallback (does this ever happen?)
               return Infinity;
             })
           );
-          
+
           // based on where "when" and the first sentence boundary are, calculate where the location part ends and "happenings" starts
-          let happeningsStartIndex_locationExists;
+          let happeningsStartIndex: number;
+
           const locationEndIndex = (() => {
             if (whenIndex === -1 || firstSentenceBoundaryIndex < whenIndex) {
               // we go with sentence
-              happeningsStartIndex_locationExists = firstSentenceBoundaryIndex + 2;
+              happeningsStartIndex = firstSentenceBoundaryIndex + 2;
               return firstSentenceBoundaryIndex;
             } else {
               // we go with "when"
-              happeningsStartIndex_locationExists = whenIndex + 6;
+              happeningsStartIndex = whenIndex + 6;
               return whenIndex;
             }
           })();
-          
-          let locationExists;
-          let location;
-          let happenings;
+
+          let locationExists: boolean;
+          let location: string;
+          let happenings: string;
+
           // if somehow the location is supposed to start before it ends, or if it has no start, then there is no location
-          if (locationStartIndex >= locationEndIndex || locationStartIndex === -1) {
+          if (locationStartIndex >= locationEndIndex || locationStartIndex <= 0) {
             // location doesnt exist
             locationExists = false;
             // so "happenings" starts with keyword, not "when"
-            const happeningsKeywords = ['stated', 'landed', 'departed', 'performed'];
-            const happeningsStartIndex_noLocation = Math.min( // whichever is first in the text
+            happeningsStartIndex = Math.min( // whichever is first in the text
               ...happeningsKeywords
                 .map(word => nodeTextContent.indexOf(' ' + word + ' ')) // map by index of first occurence
                 .filter(i => i >= 0) // discard situationkeywords that dont exist in the text, because Math.min() prefers them (-1)
             ) + 1;
-            happenings = nodeTextContent.slice(happeningsStartIndex_noLocation);
-            happenings = happenings[0].toUpperCase() + happenings.slice(1);
           } else {
             // location exists
-            location = nodeTextContent.slice(locationStartIndex + 6, locationEndIndex);
+            location = nodeTextContent.slice(locationStartIndex, locationEndIndex);
             location = location[0].toUpperCase() + location.slice(1);
             locationExists = true;
-            // happenings is after location
-            happenings = nodeTextContent.slice(happeningsStartIndex_locationExists);
-            happenings = happenings[0].toUpperCase() + happenings.slice(1);
           }
 
-          if (!happenings || happenings === '' || happenings === 'undefined' /* does this ever happen? */) happenings = nodeTextContent;
+          if (happenings === '') {
+            happenings = nodeTextContent;
+          } else {
+            happenings = nodeTextContent.slice(happeningsStartIndex);
+            happenings = happenings[0].toUpperCase() + happenings.slice(1);
+          }
 
           return `📌 ${formatLocationAndDate(locationExists, location, date)}\n\n${happenings}`;
         } else return node.text;
