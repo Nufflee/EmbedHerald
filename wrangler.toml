@@ -1,3 +1,6 @@
 name = "embedherald"
 compatibility_date = "2023-10-10"
 main = "src/worker.ts"
+
+[observability]
+enabled = true
