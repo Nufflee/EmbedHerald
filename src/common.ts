@@ -8,6 +8,16 @@ const COLORS = {
   Crash: "#E52F18",
 };
 
+const happeningsKeywords = ['stated', 'landed', 'departed', 'performed'];
+const locationKeywords = [', was', ', had been'];
+
+function formatLocationAndDate(locationExists: boolean, location: string, date: string) {
+  let str = (locationExists ? location : '') + date;
+  str = str.trim();
+  str = str[0].toUpperCase() + str.slice(1);
+  return str;
+}
+
 export async function generateHTML(articleId: string) {
   const url = `https://avherald.com/h?article=${articleId}`;
 
@@ -50,20 +60,89 @@ export async function generateHTML(articleId: string) {
     .map((node, i) => {
       if (node.nodeType === NodeType.TEXT_NODE) {
         if (i === 0) {
-          // extract the location, which means the stuff between "was" and "when", and what happened, which begins after "when".
+          // extract the location, which means the stuff between a location keyword and "when" (or when sentence ends and a new one begins), and what happened ("happenings"), which begins after "when" (or the next sentence).
           const nodeTextContent = node.text;
-          const wasIndex = nodeTextContent.indexOf(' was ');
+          const locationStartIndex = Math.min(
+            ...locationKeywords.map((keyword) => {
+              const index = nodeTextContent.indexOf(keyword)
+
+              if (index >= 0) {
+                return index + keyword.length;
+              }
+
+              return index;
+            }).filter((i) => i >= 0)
+          );
+
           const whenIndex = nodeTextContent.indexOf(' when ');
 
-          // if things go unexpectedly, abort
-          if (wasIndex >= whenIndex || wasIndex < 0) return node.text;
+          // index of the first occurence of a sentence ending in a full-stop and the next beginning with a capital letter
+          const firstSentenceBoundaryIndex = Math.min(
+            ...nodeTextContent.split('.').map((sentence, i, arr) => {
+              if (sentence.length === 0) return Infinity; // empty sentence ... wouldnt want to select one of those
 
-          let location = nodeTextContent.substring(wasIndex + 5, whenIndex);
-          location = location[0].toUpperCase() + location.slice(1);
-          let happenings = nodeTextContent.substring(whenIndex + 6);
-          happenings = happenings[0].toUpperCase() + happenings.slice(1);
+              // the index of the next sentence is the sum of the lengths of all previous sentences + fullstops
+              const nextIndex = arr.slice(0, i + 1).map(sentence => sentence.length + 1).reduce((partialSum, currentValue) => partialSum + currentValue, 0);
 
-          return `📌 ${location + date}\n\n${happenings}`;
+              const nextsentence = arr[i + 1];
+
+              // if this is the last sentence, return index of this sentence's fullstop
+              if (i === arr.length - 1) {
+                return nextIndex - 1;
+              }
+
+              // if this isnt the last sentence and the next one begins with a space and capital letter, return index of this sentence's fullstop
+              if (i < arr.length - 1 && nextsentence[0] === ' ' && nextsentence[1] === nextsentence[1].toUpperCase()) return nextIndex - 1;
+
+              // fallback (does this ever happen?)
+              return Infinity;
+            })
+          );
+
+          // based on where "when" and the first sentence boundary are, calculate where the location part ends and "happenings" starts
+          let happeningsStartIndex: number;
+
+          const locationEndIndex = (() => {
+            if (whenIndex === -1 || firstSentenceBoundaryIndex < whenIndex) {
+              // we go with sentence
+              happeningsStartIndex = firstSentenceBoundaryIndex + 2;
+              return firstSentenceBoundaryIndex;
+            } else {
+              // we go with "when"
+              happeningsStartIndex = whenIndex + 6;
+              return whenIndex;
+            }
+          })();
+
+          let locationExists: boolean;
+          let location: string;
+          let happenings: string;
+
+          // if somehow the location is supposed to start before it ends, or if it has no start, then there is no location
+          if (locationStartIndex >= locationEndIndex || locationStartIndex <= 0) {
+            // location doesnt exist
+            locationExists = false;
+            // so "happenings" starts with keyword, not "when"
+            happeningsStartIndex = Math.min( // whichever is first in the text
+              ...happeningsKeywords
+                .map(word => nodeTextContent.indexOf(' ' + word + ' ')) // map by index of first occurence
+                .filter(i => i >= 0) // discard situationkeywords that dont exist in the text, because Math.min() prefers them (-1)
+            ) + 1;
+          } else {
+            // location exists
+            location = nodeTextContent.slice(locationStartIndex, locationEndIndex);
+            location = location[0].toUpperCase() + location.slice(1);
+            locationExists = true;
+          }
+
+          if (happenings === '') {
+            happenings = nodeTextContent;
+          } else {
+            happenings = nodeTextContent.slice(happeningsStartIndex);
+            happenings = happenings[0].toUpperCase() + happenings.slice(1);
+          }
+
+          return `📌 ${formatLocationAndDate(locationExists, location, date)}\n\n${happenings}`;
         } else return node.text;
       } else {
         if (node.nodeType == NodeType.ELEMENT_NODE && (node as unknown as Element).tagName === "BR") {
